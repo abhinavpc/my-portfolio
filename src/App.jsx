@@ -7,13 +7,9 @@ import {
   signInAnonymously, 
   onAuthStateChanged,
   signInWithEmailAndPassword,
-  createUserWithEmailAndPassword,
   signOut
 } from "firebase/auth";
 import { getFirestore, collection, addDoc, deleteDoc, doc, onSnapshot, query } from "firebase/firestore";
-
-// --- Configuration ---
-const ADMIN_EMAIL = "hello@sirishamantrala.art"; 
 
 // --- Firebase Initialization ---
 const firebaseConfig = typeof __firebase_config !== 'undefined' ? JSON.parse(__firebase_config) : {
@@ -91,7 +87,6 @@ export default function App() {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [authError, setAuthError] = useState('');
-  const [isSignUp, setIsSignUp] = useState(false);
 
   // Form State
   const [newTitle, setNewTitle] = useState('');
@@ -118,7 +113,9 @@ export default function App() {
 
     const unsubscribe = onAuthStateChanged(auth, (currentUser) => {
       setUser(currentUser);
-      if (currentUser && currentUser.email === ADMIN_EMAIL) {
+      
+      // LOGIC CHANGE: If user is logged in and NOT anonymous, they are the admin.
+      if (currentUser && !currentUser.isAnonymous) {
         setIsAdmin(true);
       } else {
         setIsAdmin(false);
@@ -155,15 +152,11 @@ export default function App() {
     e.preventDefault();
     setAuthError('');
     try {
-      if (isSignUp) {
-        await createUserWithEmailAndPassword(auth, email, password);
-      } else {
-        await signInWithEmailAndPassword(auth, email, password);
-      }
+      await signInWithEmailAndPassword(auth, email, password);
       setIsLoginOpen(false);
       setEmail(''); setPassword('');
     } catch (err) {
-      setAuthError(err.message.replace('Firebase: ', ''));
+      setAuthError("Incorrect email or password.");
     }
   };
 
@@ -503,11 +496,13 @@ export default function App() {
                       className="w-full border border-[#eee] p-3 text-sm outline-none focus:border-black transition-colors" required />
                {authError && <p className="text-red-500 text-xs text-center">{authError}</p>}
                <button type="submit" className="w-full bg-[#1a1a1a] text-white py-3 text-[10px] uppercase tracking-[0.2em]">
-                 {isSignUp ? 'Create' : 'Enter'}
+                 Enter
                </button>
-               <button type="button" onClick={() => setIsSignUp(!isSignUp)} className="w-full text-center text-[9px] uppercase tracking-widest text-[#999] hover:text-black">
+               {/* Hidden Create Account button for security. To re-enable, uncomment below */}
+               {/* <button type="button" onClick={() => setIsSignUp(!isSignUp)} className="w-full text-center text-[9px] uppercase tracking-widest text-[#999] hover:text-black">
                  {isSignUp ? 'Back to Login' : 'First Access? Create Account'}
                </button>
+               */}
              </form>
           </div>
         </div>
